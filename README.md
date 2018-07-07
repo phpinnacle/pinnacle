@@ -21,7 +21,25 @@ $ composer require phpinnacle/pinnacle
 ```php
 <?php
 
+use Amp\Loop;
+use PHPinnacle\Pinnacle\ApplicationBuilder;
+use PHPinnacle\Pinnacle\Loader;
+
 require __DIR__ . '/vendor/autoload.php';
+
+$builder = new ApplicationBuilder('myapp');
+$builder
+    ->transport('amqp://localhost:5672')
+    ->container($psrContainer)
+    ->logger($psrLogger)
+    ->load(new Loader\ServiceLoader('Acme\\Demo\\Services'))
+;
+
+Loop::run(function () use ($builder) {
+    $app = $builder->build();
+
+    yield $app->run();
+});
 
 ```
 
