@@ -110,6 +110,19 @@ class ApplicationBuilder
     }
 
     /**
+     * @param string   $event
+     * @param callable $listener
+     *
+     * @return self
+     */
+    public function listen(string $event, callable $listener): self
+    {
+        $this->registry->listen($event, $listener);
+
+        return $this;
+    }
+
+    /**
      * @param string $message
      * @param string $destination
      *
@@ -123,14 +136,17 @@ class ApplicationBuilder
     }
 
     /**
-     * @param string   $event
-     * @param callable $listener
+     * @param string[] ...$events
      *
      * @return self
      */
-    public function listen(string $event, callable $listener): self
+    public function produces(string ...$events): self
     {
-        $this->registry->listen($event, $listener);
+        foreach ($events as $event) {
+            $this->handle($event, function (object $message) {
+                yield publish($message);
+            });
+        }
 
         return $this;
     }
@@ -223,13 +239,12 @@ class ApplicationBuilder
         $container = $this->createContainer();
         $container
             ->add($config)
-            ->add($gateway)
             ->add($kernel)
         ;
 
         $this
             ->instruction(new Instruction\ArgumentsInstruction($container))
-            //->instruction(new Instruction\LoggerInstruction($this->logger))
+            ->instruction(new Instruction\LoggerInstruction($this->logger))
         ;
 
         $this
@@ -238,13 +253,13 @@ class ApplicationBuilder
             ->handle(Message\Send::class, [$gateway, 'send'])
             ->handle(Message\Confirm::class, [$gateway, 'confirm'])
             ->handle(Message\Reject::class, [$gateway, 'reject'])
-            ->handle(Message\Event::class, [$publisher, 'publish']);
+            ->handle(Message\Event::class, [$publisher, 'event'])
         ;
 
         $this->setupDispatcher($dispatcher);
         $this->setupPublisher($publisher);
 
-        return new Application($this->name, $kernel);
+        return new Application($this->name, $this->registry->channels(), $kernel);
     }
 
     /**

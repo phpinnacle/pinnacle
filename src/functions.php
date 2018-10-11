@@ -34,7 +34,17 @@ function send(string $destination, object $message, int $timeout = 0, array $hea
  */
 function push(string $destination, object $message, array $headers = []): Message\Send
 {
-    return new Message\Send($destination, $message, -1, $headers);
+    return send($destination, $message, -1, $headers);
+}
+
+/**
+ * @param object $message
+ *
+ * @return Message\Send
+ */
+function publish(object $message): Message\Send
+{
+    return push(\get_class($message), new Message\Event($message));
 }
 
 /**
@@ -46,14 +56,4 @@ function push(string $destination, object $message, array $headers = []): Messag
 function delay($interval, object $message): Message\Delay
 {
     return new Message\Delay($interval, $message);
-}
-
-/**
- * @param object $message
- *
- * @return Message\Event
- */
-function event(object $message): Message\Event
-{
-    return new Message\Event($message);
 }

@@ -120,6 +120,17 @@ class EnqueueTransport implements Transport
      */
     private function createQueue(string $name): PsrQueue
     {
+        $name = $this->sanitizeName($name);
+
         return $this->queues[$name] ?? $this->queues[$name] = $this->context->createQueue($name);
+    }
+
+    /**
+     * @param string $name
+     * @return string
+     */
+    private function sanitizeName(string $name): string
+    {
+        return strtolower(str_replace('\\', '_', $name));
     }
 }

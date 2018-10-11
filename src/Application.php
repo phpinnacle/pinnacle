@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
-use PHPinnacle\Ensign\Action;
+use Amp\Promise;
 
 class Application
 {
@@ -20,6 +20,11 @@ class Application
      * @var string
      */
     private $name;
+
+    /**
+     * @var array
+     */
+    private $channels;
 
     /**
      * @var Kernel
@@ -30,24 +35,31 @@ class Application
      * @param string $name
      * @param Kernel $kernel
      */
-    public function __construct(string $name, Kernel $kernel)
+    public function __construct(string $name, array $channels, Kernel $kernel)
     {
-        $this->name   = $name;
-        $this->kernel = $kernel;
+        $this->name     = $name;
+        $this->channels = $channels;
+        $this->kernel   = $kernel;
     }
 
     /**
-     * @return Action
+     * @return Promise
      */
-    public function start(): Action
+    public function start(): Promise
     {
-        return $this->dispatch(new Message\Open($this->name));
+        $channels = \array_map(function (string $channel) {
+            return $this->dispatch(new Message\Open($channel));
+        }, $this->channels);
+
+        $channels[] = $this->dispatch(new Message\Open($this->name));
+
+        return Promise\any($channels);
     }
 
     /**
-     * @return Action
+     * @return Promise
      */
-    public function stop(): Action
+    public function stop(): Promise
     {
         return $this->dispatch(new Message\Close($this->name));
     }
@@ -56,21 +68,10 @@ class Application
      * @param object    $message
      * @param mixed  ...$arguments
      *
-     * @return Action
+     * @return Promise
      */
-    public function dispatch(object $message, ...$arguments): Action
+    public function dispatch(object $message, ...$arguments): Promise
     {
         return $this->kernel->dispatch($message, ...$arguments);
-    }
-
-    /**
-     * @param object    $message
-     * @param mixed  ...$arguments
-     *
-     * @return Action
-     */
-    public function publish(object $message, ...$arguments): Action
-    {
-        return $this->dispatch(event($message), ...$arguments);
     }
 }

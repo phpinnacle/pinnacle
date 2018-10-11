@@ -11,12 +11,13 @@ require __DIR__ . '/shared.php';
 
 $app = (new Pinnacle\ApplicationBuilder('consumer'))
     ->transport('file:///tmp')
+    ->produces(Greeting::class)
     ->handle(Hello::class, static function (Hello $hello, LoggerInterface $logger) {
         $logger->debug("Hello {$hello->name}!");
 
         yield new \Amp\Delayed(1000); // Emulate long calculating
 
-        $logger->debug('Done!');
+        yield new Greeting($hello->name);
     })
     ->build()
 ;

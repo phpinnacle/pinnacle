@@ -11,3 +11,7 @@ class Hello
         $this->name = $name;
     }
 }
+
+class Greeting extends Hello
+{
+}

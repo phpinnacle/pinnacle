@@ -44,7 +44,7 @@ class Publisher
      *
      * @return Promise
      */
-    public function publish(Message\Event $event, Context $context): Promise
+    public function event(Message\Event $event, Context $context): Promise
     {
         $message = $event->message();
 

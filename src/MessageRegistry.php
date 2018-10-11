@@ -65,4 +65,12 @@ final class MessageRegistry
     {
         return $this->listeners;
     }
+
+    /**
+     * @return string[]
+     */
+    public function channels(): array
+    {
+        return \array_keys($this->listeners);
+    }
 }

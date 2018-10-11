@@ -69,7 +69,7 @@ class Gateway
         $timeout = (int) $this->config[self::INTERVAL];
 
         $logger->info('Start consuming messages for "{origin}"', [
-            'origin' => $command->origin(),
+            'origin' => $origin,
         ]);
 
         $iterator = $this->transport->consume($origin, $timeout);
