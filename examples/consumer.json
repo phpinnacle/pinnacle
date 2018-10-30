@@ -1,0 +1,10 @@
+{
+    "project": "consumer",
+    "transport": "file:///tmp",
+    "produces": [
+        "Greeting"
+    ],
+    "handle": {
+        "Hello": ["ConsumerService::sayHello"]
+    }
+}

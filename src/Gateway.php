@@ -12,27 +12,20 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
-use Amp\Deferred;
-use Amp\Loop;
 use Amp\Promise;
-use Amp\Success;
 use Psr\Log\LoggerInterface;
 
 class Gateway
 {
-    const
-        INTERVAL = 'interval'
-    ;
-
     /**
      * @var Transport
      */
     private $transport;
 
     /**
-     * @var Configuration
+     * @var Synchronizer
      */
-    private $config;
+    private $synchronizer;
 
     /**
      * @var Packer
@@ -40,20 +33,15 @@ class Gateway
     private $packer;
 
     /**
-     * @var Deferred[]
+     * @param Transport    $transport
+     * @param Synchronizer $synchronizer
+     * @param Packer       $packer
      */
-    private $waiters = [];
-
-    /**
-     * @param Transport     $transport
-     * @param Configuration $config
-     * @param Packer        $packer
-     */
-    public function __construct(Transport $transport, Configuration $config, Packer $packer)
+    public function __construct(Transport $transport, Synchronizer $synchronizer, Packer $packer)
     {
-        $this->transport = $transport;
-        $this->config    = $config;
-        $this->packer    = $packer;
+        $this->transport    = $transport;
+        $this->synchronizer = $synchronizer;
+        $this->packer       = $packer;
     }
 
     /**
@@ -65,44 +53,55 @@ class Gateway
      */
     public function open(Message\Open $command, Kernel $kernel, LoggerInterface $logger)
     {
-        $origin  = $command->origin();
-        $timeout = (int) $this->config[self::INTERVAL];
-
-        $logger->info('Start consuming messages for "{origin}"', [
-            'origin' => $origin,
+        $logger->debug('Start consuming messages for "{channel}"', [
+            'channel' => $command->channel(),
         ]);
 
-        $iterator = $this->transport->consume($origin, $timeout);
+        $iterator = $this->transport->open($command->channel());
 
-        $watcher = Loop::defer(function () use ($iterator, $kernel) {
-            while (yield $iterator->advance()) {
-                /** @var Package $package */
-                $package = $iterator->getCurrent();
+        iterate($iterator, function (Package $package) use ($kernel) {
+            $message = $this->packer->unpack($package);
+            $context = Context\RemoteContext::create($package);
 
-                $watcher = Loop::defer(function () use ($package, $kernel) {
-                    $message = $this->packer->unpack($package);
-                    $context = Context\RemoteContext::create($package);
+            try {
+                yield $kernel->dispatch($message, $context);
 
-                    try {
-                        yield $kernel->dispatch($message, $context);
-
-                        $reply = new Message\Confirm($context->id());
-                    } catch (\Throwable $error) {
-                        $reply = new Message\Reject($context->id(), $error);
-                    }
-
-                    if ($message instanceof Contract\NoConfirmation) {
-                        return;
-                    }
-
-                    yield $this->transport->send($context->origin(), $this->packer->pack($reply));
-                });
-
-                Loop::unreference($watcher);
+                $reply = new Message\Confirm($context->id());
+            } catch (\Throwable $error) {
+                $reply = new Message\Reject($context->id(), $error);
             }
-        });
 
-        Loop::unreference($watcher);
+            if ($message instanceof Contract\NoConfirmation) {
+                return;
+            }
+
+            yield $this->transport->send($context->origin(), $this->packer->pack($reply));
+        });
+    }
+
+    /**
+     * @param Message\Subscribe $command
+     * @param Publisher         $publisher
+     * @param LoggerInterface   $logger
+     *
+     * @return void
+     */
+    public function subscribe(Message\Subscribe $command, Publisher $publisher, LoggerInterface $logger)
+    {
+        foreach ($command->channels() as $channel) {
+            $logger->debug('Subscribed to channel "{channel}"', [
+                'channel' => $channel,
+            ]);
+
+            $iterator = $this->transport->subscribe($channel);
+
+            iterate($iterator, function (Package $package) use ($publisher) {
+                $message = $this->packer->unpack($package);
+                $context = Context\RemoteContext::create($package);
+
+                yield $publisher->publish($message, $context);
+            });
+        }
     }
 
     /**
@@ -113,8 +112,8 @@ class Gateway
      */
     public function close(Message\Close $command, LoggerInterface $logger)
     {
-        $logger->info('Stop consuming messages for "{origin}"', [
-            'origin' => $command->origin(),
+        $logger->debug('Stop consuming messages for "{channel}"', [
+            'channel' => $command->channel(),
         ]);
     }
 
@@ -128,14 +127,32 @@ class Gateway
     {
         $package = $this->packer->pack($command->message(), $command->headers());
 
-        yield $this->transport->send($command->destination(), $package);
+        yield $this->transport->send($command->channel(), $package);
 
-        $logger->info('Message "{id}" sent to "{destination}".', [
-            'id'          => $package->id(),
-            'destination' => $command->destination(),
+        $logger->debug('Message "{id}" sent to "{channel}".', [
+            'id'      => $package->id(),
+            'channel' => $command->channel(),
         ]);
 
-        return $this->wait($package->id(), $command->timeout());
+        return $this->synchronizer->wait($package->id(), $command->timeout());
+    }
+
+    /**
+     * @param Message\Publish $command
+     * @param LoggerInterface $logger
+     *
+     * @return void
+     */
+    public function publish(Message\Publish $command, LoggerInterface $logger)
+    {
+        $package = $this->packer->pack($command->message(), $command->headers());
+
+        yield $this->transport->publish($command->channel(), $package);
+
+        $logger->debug('Message "{id}" published to "{channel}".', [
+            'id'      => $package->id(),
+            'channel' => $command->channel(),
+        ]);
     }
 
     /**
@@ -148,13 +165,13 @@ class Gateway
     public function confirm(Message\Confirm $command, LoggerInterface $logger)
     {
         try {
-            $this->resolve($command->id());
+            $this->synchronizer->resolve($command->id());
 
-            $logger->info('Message "{id}" resolved with no errors.', [
+            $logger->debug('Message "{id}" resolved with no errors.', [
                 'id' => $command->id(),
             ]);
         } catch (Exception\ResolutionException $error) {
-            $logger->info('Message "{id}" cant be resolved.', [
+            $logger->warning('Message "{id}" cant be confirmed.', [
                 'id' => $command->id(),
             ]);
 
@@ -172,68 +189,19 @@ class Gateway
     public function reject(Message\Reject $command, LoggerInterface $logger)
     {
         try {
-            $this->resolve($command->id(), Exception\RemoteException::reject($command));
+            $this->synchronizer->reject($command->id(), Exception\RemoteException::reject($command));
 
-            $logger->warning('Message "{id}" resolved with error: [{code}] {text}.', [
+            $logger->error('Message "{id}" resolved with error: [{code}] {text}.', [
                 'id'   => $command->id(),
                 'code' => $command->code(),
                 'text' => $command->text(),
             ]);
         } catch (Exception\ResolutionException $error) {
-            $logger->info('Message "{id}" cant be resolved.', [
+            $logger->warning('Message "{id}" cant be rejected.', [
                 'id' => $command->id(),
             ]);
 
             throw $error;
-        }
-    }
-
-    /**
-     * @param string $id
-     * @param int    $timeout
-     *
-     * @return Promise
-     */
-    private function wait(string $id, int $timeout): Promise
-    {
-        if ($timeout < 0) {
-            return new Success();
-        }
-
-        $deferred = new Deferred();
-
-        $this->waiters[$id] = &$deferred;
-
-        if ($timeout > 0) {
-            Loop::delay($timeout, function () use ($id) {
-                if ($deferred = $this->waiters[$id] ?? null) {
-                    $deferred->fail(new Exception\TimeoutException($id));
-                }
-            });
-        }
-
-        return $deferred->promise();
-    }
-
-    /**
-     * @param string     $id
-     * @param \Throwable $error
-     *
-     * @return void
-     * @throws Exception\ResolutionException
-     */
-    private function resolve(string $id, \Throwable $error = null)
-    {
-        if (!$deferred = $this->waiters[$id] ?? null) {
-            throw new Exception\ResolutionException($id);
-        }
-
-        unset($this->waiters[$id]);
-
-        if ($error) {
-            $deferred->fail($error);
-        } else {
-            $deferred->resolve();
         }
     }
 }

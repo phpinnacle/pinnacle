@@ -12,22 +12,12 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle\Message;
 
-class Send
+class Publish
 {
-    /**
-     * @var string
-     */
-    private $channel;
-
     /**
      * @var object
      */
     private $message;
-
-    /**
-     * @var int
-     */
-    private $timeout;
 
     /**
      * @var array
@@ -35,25 +25,13 @@ class Send
     private $headers;
 
     /**
-     * @param string $channel
      * @param object $message
-     * @param int    $timeout
      * @param array  $headers
      */
-    public function __construct(string $channel, object $message, int $timeout = 0, array $headers = [])
+    public function __construct(object $message, array $headers = [])
     {
-        $this->channel = $channel;
         $this->message = $message;
-        $this->timeout = $timeout;
         $this->headers = $headers;
-    }
-
-    /**
-     * @return string
-     */
-    public function channel(): string
-    {
-        return $this->channel;
     }
 
     /**
@@ -65,11 +43,11 @@ class Send
     }
 
     /**
-     * @return int
+     * @return string
      */
-    public function timeout(): int
+    public function channel(): string
     {
-        return $this->timeout;
+        return \get_class($this->message);
     }
 
     /**

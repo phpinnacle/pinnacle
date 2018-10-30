@@ -18,18 +18,32 @@ use Amp\Promise;
 interface Transport
 {
     /**
-     * @param string $origin
-     * @param int    $interval
+     * @param string $channel
      *
      * @return Iterator<Package>
      */
-    public function consume(string $origin, int $interval): Iterator;
+    public function open(string $channel): Iterator;
 
     /**
-     * @param string  $destination
+     * @param string $channel
+     *
+     * @return Iterator<Package>
+     */
+    public function subscribe(string $channel): Iterator;
+
+    /**
+     * @param string  $channel
      * @param Package $package
      *
      * @return Promise<bool>
      */
-    public function send(string $destination, Package $package): Promise;
+    public function send(string $channel, Package $package): Promise;
+
+    /**
+     * @param string  $channel
+     * @param Package $package
+     *
+     * @return Promise<bool>
+     */
+    public function publish(string $channel, Package $package): Promise;
 }

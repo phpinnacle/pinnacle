@@ -32,8 +32,9 @@ class Application
     private $kernel;
 
     /**
-     * @param string $name
-     * @param Kernel $kernel
+     * @param string   $name
+     * @param string[] $channels
+     * @param Kernel   $kernel
      */
     public function __construct(string $name, array $channels, Kernel $kernel)
     {
@@ -47,13 +48,10 @@ class Application
      */
     public function start(): Promise
     {
-        $channels = \array_map(function (string $channel) {
-            return $this->dispatch(new Message\Open($channel));
-        }, $this->channels);
-
-        $channels[] = $this->dispatch(new Message\Open($this->name));
-
-        return Promise\any($channels);
+        return Promise\all([
+            $this->dispatch(new Message\Open($this->name)),
+            $this->dispatch(new Message\Subscribe($this->channels)),
+        ]);
     }
 
     /**

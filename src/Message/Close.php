@@ -17,21 +17,21 @@ class Close
     /**
      * @var string
      */
-    private $origin;
+    private $channel;
 
     /**
-     * @param string $origin
+     * @param string $channel
      */
-    public function __construct(string $origin)
+    public function __construct(string $channel)
     {
-        $this->origin = $origin;
+        $this->channel = $channel;
     }
 
     /**
      * @return string
      */
-    public function origin(): string
+    public function channel(): string
     {
-        return $this->origin;
+        return $this->channel;
     }
 }

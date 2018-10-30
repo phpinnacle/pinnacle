@@ -39,17 +39,15 @@ class Publisher
     }
 
     /**
-     * @param Message\Event $event
-     * @param Context       $context
+     * @param object  $event
+     * @param Context $context
      *
      * @return Promise
      */
-    public function event(Message\Event $event, Context $context): Promise
+    public function publish(object $event, Context $context): Promise
     {
-        $message = $event->message();
-
-        return Promise\any(\array_map(function ($listener) use ($message, $context) {
-            return $this->processor->execute($listener, [$message, $context]);
-        }, $this->listeners[\get_class($message)] ?? []));
+        return Promise\any(\array_map(function ($listener) use ($event, $context) {
+            return $this->processor->execute($listener, [$event, $context]);
+        }, $this->listeners[\get_class($event)] ?? []));
     }
 }

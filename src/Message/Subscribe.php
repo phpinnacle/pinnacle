@@ -12,26 +12,26 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle\Message;
 
-class Event
+class Subscribe
 {
     /**
-     * @var object
+     * @var string[]
      */
-    private $message;
+    private $channels;
 
     /**
-     * @param object $message
+     * @param string[] $channels
      */
-    public function __construct(object $message)
+    public function __construct(array $channels)
     {
-        $this->message = $message;
+        $this->channels = $channels;
     }
 
     /**
-     * @return object
+     * @return string[]
      */
-    public function message(): object
+    public function channels(): array
     {
-        return $this->message;
+        return $this->channels;
     }
 }

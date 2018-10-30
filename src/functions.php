@@ -12,6 +12,9 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
+use Amp\Iterator;
+use Amp\Loop;
+
 /**
  * @param string $destination
  * @param object $message
@@ -39,12 +42,13 @@ function push(string $destination, object $message, array $headers = []): Messag
 
 /**
  * @param object $message
+ * @param array $headers
  *
- * @return Message\Send
+ * @return Message\Publish
  */
-function publish(object $message): Message\Send
+function publish(object $message, array $headers = []): Message\Publish
 {
-    return push(\get_class($message), new Message\Event($message));
+    return new Message\Publish($message, $headers);
 }
 
 /**
@@ -56,4 +60,29 @@ function publish(object $message): Message\Send
 function delay($interval, object $message): Message\Delay
 {
     return new Message\Delay($interval, $message);
+}
+
+/**
+ * @param callable $callback
+ */
+function defer(callable $callback): void
+{
+    Loop::unreference(Loop::defer($callback));
+}
+
+/**
+ * @param Iterator $iterator
+ * @param callable $callback
+ */
+function iterate(Iterator $iterator, callable $callback): void
+{
+    defer(function () use ($iterator, $callback) {
+        while (yield $iterator->advance()) {
+            $current = $iterator->getCurrent();
+
+            defer(function () use ($current, $callback) {
+                yield \Amp\call($callback, $current);
+            });
+        }
+    });
 }

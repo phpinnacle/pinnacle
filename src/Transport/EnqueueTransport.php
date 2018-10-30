@@ -19,8 +19,7 @@ use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
 use Interop\Queue\PsrContext;
-use Interop\Queue\PsrProducer;
-use Interop\Queue\PsrQueue;
+use Interop\Queue\PsrDestination;
 use PHPinnacle\Pinnacle\Package;
 use PHPinnacle\Pinnacle\Transport;
 
@@ -32,22 +31,18 @@ class EnqueueTransport implements Transport
     private $context;
 
     /**
-     * @var PsrProducer
+     * @var int
      */
-    private $producer;
-
-    /**
-     * @var PsrQueue[]
-     */
-    private $queues = [];
+    private $interval;
 
     /**
      * @param PsrContext $context
+     * @param int        $interval
      */
-    public function __construct(PsrContext $context)
+    public function __construct(PsrContext $context, int $interval = 10)
     {
         $this->context  = $context;
-        $this->producer = $context->createProducer();
+        $this->interval = $interval;
     }
 
     /**
@@ -63,13 +58,54 @@ class EnqueueTransport implements Transport
     /**
      * {@inheritdoc}
      */
-    public function consume(string $origin, int $interval): Iterator
+    public function open(string $channel): Iterator
     {
-        $queue    = $this->createQueue($origin);
-        $consumer = $this->context->createConsumer($queue);
+        $name = $this->sanitizeName($channel);
+
+        return $this->consume($this->context->createQueue($name));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function subscribe(string $channel): Iterator
+    {
+        $name = $this->sanitizeName($channel);
+
+        return $this->consume($this->context->createTopic($name));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function send(string $channel, Package $package): Promise
+    {
+        $name = $this->sanitizeName($channel);
+
+        return $this->emit($this->context->createQueue($name), $package);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function publish(string $channel, Package $package): Promise
+    {
+        $name = $this->sanitizeName($channel);
+
+        return $this->emit($this->context->createTopic($name), $package);
+    }
+
+    /**
+     * @param PsrDestination $destination
+     *
+     * @return Iterator
+     */
+    private function consume(PsrDestination $destination): Iterator
+    {
+        $consumer = $this->context->createConsumer($destination);
         $emitter  = new Emitter();
 
-        Loop::repeat($interval, static function () use ($consumer, $emitter): void {
+        Loop::repeat($this->interval, static function () use ($consumer, $emitter): void {
             if (!$message = $consumer->receiveNoWait()) {
                 return;
             }
@@ -94,35 +130,24 @@ class EnqueueTransport implements Transport
     }
 
     /**
-     * {@inheritdoc}
+     * @param PsrDestination $destination
+     * @param Package        $package
+     *
+     * @return Promise
      */
-    public function send(string $destination, Package $package): Promise
+    private function emit(PsrDestination $destination, Package $package): Promise
     {
-        $message = $this->context->createMessage($package->body(), [], $package->headers());
-        $message->setReplyTo($package->origin());
-        $message->setMessageId($package->id());
-
-        $queue = $this->createQueue($destination);
-
         try {
-            $this->producer->send($queue, $message);
+            $message = $this->context->createMessage($package->body(), [], $package->headers());
+            $message->setReplyTo($package->origin());
+            $message->setMessageId($package->id());
+
+            $this->context->createProducer()->send($destination, $message);
 
             return new Success(true);
         } catch (\Throwable $error) {
             return new Failure($error);
         }
-    }
-
-    /**
-     * @param string $name
-     *
-     * @return PsrQueue
-     */
-    private function createQueue(string $name): PsrQueue
-    {
-        $name = $this->sanitizeName($name);
-
-        return $this->queues[$name] ?? $this->queues[$name] = $this->context->createQueue($name);
     }
 
     /**

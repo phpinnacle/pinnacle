@@ -1,0 +1,12 @@
+{
+    "project": "sender",
+    "transport": "file:///tmp",
+    "routing": {
+        "Hello": "consumer"
+    },
+    "listen": {
+        "Greeting": [
+            ["SenderService::replyGreeting"]
+        ]
+    }
+}

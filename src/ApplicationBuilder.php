@@ -30,9 +30,7 @@ class ApplicationBuilder
     /**
      * @var array
      */
-    private $options = [
-        Gateway::INTERVAL => 10,
-    ];
+    private $options = [];
 
     /**
      * @var ContainerInterface
@@ -233,27 +231,29 @@ class ApplicationBuilder
         $publisher  = new Publisher($processor);
 
         $config  = $this->createConfiguration();
-        $gateway = $this->createGateway($config);
+        $gateway = $this->createGateway();
         $kernel  = $this->createKernel($dispatcher);
 
         $container = $this->createContainer();
         $container
             ->add($config)
             ->add($kernel)
+            ->add($publisher)
         ;
 
         $this
             ->instruction(new Instruction\ArgumentsInstruction($container))
-            ->instruction(new Instruction\LoggerInstruction($this->logger))
+            //->instruction(new Instruction\LoggerInstruction($this->logger))
         ;
 
         $this
             ->handle(Message\Open::class, [$gateway, 'open'])
+            ->handle(Message\Subscribe::class, [$gateway, 'subscribe'])
             ->handle(Message\Close::class, [$gateway, 'close'])
             ->handle(Message\Send::class, [$gateway, 'send'])
+            ->handle(Message\Publish::class, [$gateway, 'publish'])
             ->handle(Message\Confirm::class, [$gateway, 'confirm'])
             ->handle(Message\Reject::class, [$gateway, 'reject'])
-            ->handle(Message\Event::class, [$publisher, 'event'])
         ;
 
         $this->setupDispatcher($dispatcher);
@@ -271,15 +271,13 @@ class ApplicationBuilder
     }
 
     /**
-     * @param Configuration $config
-     *
      * @return Gateway
      */
-    private function createGateway(Configuration $config): Gateway
+    private function createGateway(): Gateway
     {
         $packer = new Packer($this->name, $this->serializer);
 
-        return new Gateway($this->transport, $config, $packer);
+        return new Gateway($this->transport, new Synchronizer(), $packer);
     }
 
     /**
