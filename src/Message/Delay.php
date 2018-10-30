@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle\Message;
 
-class Delay
+final class Delay
 {
     /**
      * @var string|int

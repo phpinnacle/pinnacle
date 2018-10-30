@@ -17,7 +17,7 @@ use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
 
-class Synchronizer
+final class Synchronizer
 {
     /**
      * @var Deferred[]

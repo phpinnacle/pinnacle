@@ -14,7 +14,7 @@ namespace PHPinnacle\Pinnacle\Message;
 
 use PHPinnacle\Pinnacle\Contract\NoConfirmation;
 
-class Confirm implements NoConfirmation
+final class Confirm implements NoConfirmation
 {
     /**
      * @var string

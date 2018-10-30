@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle\Exception;
 
-class TimeoutException extends PinnacleException
+final class TimeoutException extends PinnacleException
 {
     /**
      * @param string $id

@@ -14,7 +14,7 @@ namespace PHPinnacle\Pinnacle\Exception;
 
 use PHPinnacle\Pinnacle\Message;
 
-class RemoteException extends PinnacleException
+final class RemoteException extends PinnacleException
 {
     /**
      * @var string

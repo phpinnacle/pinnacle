@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
-class Configuration implements \ArrayAccess
+final class Configuration implements \ArrayAccess
 {
     /**
      * @var array

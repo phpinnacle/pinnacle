@@ -12,6 +12,6 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle\Exception;
 
-class PinnacleException extends \Exception
+abstract class PinnacleException extends \Exception
 {
 }

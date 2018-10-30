@@ -14,7 +14,7 @@ namespace PHPinnacle\Pinnacle\Container;
 
 use Psr\Container\ContainerInterface;
 
-class ProxyContainer implements ContainerInterface
+final class ProxyContainer implements ContainerInterface
 {
     /**
      * @var ContainerInterface

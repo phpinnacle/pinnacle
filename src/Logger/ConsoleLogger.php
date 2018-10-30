@@ -21,7 +21,7 @@ use Monolog\Processor\PsrLogMessageProcessor;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 
-class ConsoleLogger extends AbstractLogger
+final class ConsoleLogger extends AbstractLogger
 {
     /**
      * @var LoggerInterface

@@ -5,7 +5,7 @@ namespace PHPinnacle\Pinnacle;
 use Amp\Promise;
 use PHPinnacle\Ensign\Processor;
 
-class Publisher
+final class Publisher
 {
     /**
      * @var Processor

@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
-class Package
+final class Package
 {
     const
         HEADER_SERIALIZER = 'serializer',

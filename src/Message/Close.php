@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle\Message;
 
-class Close
+final class Close
 {
     /**
      * @var string

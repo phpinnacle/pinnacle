@@ -15,7 +15,7 @@ namespace PHPinnacle\Pinnacle\Context;
 use PHPinnacle\Pinnacle\Context;
 use PHPinnacle\Pinnacle\Package;
 
-class RemoteContext implements Context
+final class RemoteContext implements Context
 {
     /**
      * @var string

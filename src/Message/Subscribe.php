@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle\Message;
 
-class Subscribe
+final class Subscribe
 {
     /**
      * @var string[]

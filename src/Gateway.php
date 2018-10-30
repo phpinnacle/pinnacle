@@ -15,7 +15,7 @@ namespace PHPinnacle\Pinnacle;
 use Amp\Promise;
 use Psr\Log\LoggerInterface;
 
-class Gateway
+final class Gateway
 {
     /**
      * @var Transport

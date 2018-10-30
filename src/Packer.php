@@ -14,7 +14,7 @@ namespace PHPinnacle\Pinnacle;
 
 use PHPinnacle\Identity\UUID;
 
-class Packer
+final class Packer
 {
     /**
      * @var string

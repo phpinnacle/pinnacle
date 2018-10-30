@@ -14,7 +14,7 @@ namespace PHPinnacle\Pinnacle;
 
 use Amp\Promise;
 
-class Application
+final class Application
 {
     /**
      * @var string

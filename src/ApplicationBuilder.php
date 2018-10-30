@@ -20,7 +20,7 @@ use PHPinnacle\Pinnacle\Container;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
-class ApplicationBuilder
+final class ApplicationBuilder
 {
     /**
      * @var string

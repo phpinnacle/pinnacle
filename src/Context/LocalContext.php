@@ -15,7 +15,7 @@ namespace PHPinnacle\Pinnacle\Context;
 use PHPinnacle\Identity\UUID;
 use PHPinnacle\Pinnacle\Context;
 
-class LocalContext implements Context
+final class LocalContext implements Context
 {
     /**
      * @var string

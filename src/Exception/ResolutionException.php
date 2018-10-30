@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle\Exception;
 
-class ResolutionException extends PinnacleException
+final class ResolutionException extends PinnacleException
 {
     /**
      * @param string $id

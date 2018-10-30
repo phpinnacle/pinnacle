@@ -14,7 +14,7 @@ namespace PHPinnacle\Pinnacle\Serializer;
 
 use PHPinnacle\Pinnacle\Serializer;
 
-class NativeSerializer implements Serializer
+final class NativeSerializer implements Serializer
 {
     /**
      * {@inheritdoc}

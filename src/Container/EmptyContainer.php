@@ -15,7 +15,7 @@ namespace PHPinnacle\Pinnacle\Container;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
-class EmptyContainer implements ContainerInterface
+final class EmptyContainer implements ContainerInterface
 {
 
     /**

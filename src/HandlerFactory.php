@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
-class HandlerFactory
+final class HandlerFactory
 {
     /**
      * @var Instruction[]

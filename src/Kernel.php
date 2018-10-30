@@ -5,7 +5,7 @@ namespace PHPinnacle\Pinnacle;
 use PHPinnacle\Ensign\Action;
 use PHPinnacle\Ensign\Dispatcher;
 
-class Kernel
+final class Kernel
 {
     /**
      * @var Dispatcher

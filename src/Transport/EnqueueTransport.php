@@ -23,7 +23,7 @@ use Interop\Queue\PsrDestination;
 use PHPinnacle\Pinnacle\Package;
 use PHPinnacle\Pinnacle\Transport;
 
-class EnqueueTransport implements Transport
+final class EnqueueTransport implements Transport
 {
     /**
      * @var PsrContext
