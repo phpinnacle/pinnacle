@@ -53,11 +53,6 @@ final class ApplicationBuilder
     private $registry;
 
     /**
-     * @var HandlerFactory
-     */
-    private $factory;
-
-    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -74,7 +69,6 @@ final class ApplicationBuilder
     {
         $this->name       = $name;
         $this->registry   = new MessageRegistry();
-        $this->factory    = new HandlerFactory();
         $this->container  = new Container\EmptyContainer();
         $this->executor   = new Executor\SimpleExecutor();
         $this->serializer = new Serializer\NativeSerializer();
@@ -198,18 +192,6 @@ final class ApplicationBuilder
     }
 
     /**
-     * @param Instruction $instruction
-     *
-     * @return self
-     */
-    public function instruction(Instruction $instruction): self
-    {
-        $this->factory->instruction($instruction);
-
-        return $this;
-    }
-
-    /**
      * @param int $number
      *
      * @return self
@@ -242,11 +224,6 @@ final class ApplicationBuilder
         ;
 
         $this
-            ->instruction(new Instruction\ArgumentsInstruction($container))
-            //->instruction(new Instruction\LoggerInstruction($this->logger))
-        ;
-
-        $this
             ->handle(Message\Open::class, [$gateway, 'open'])
             ->handle(Message\Subscribe::class, [$gateway, 'subscribe'])
             ->handle(Message\Close::class, [$gateway, 'close'])
@@ -256,8 +233,10 @@ final class ApplicationBuilder
             ->handle(Message\Reject::class, [$gateway, 'reject'])
         ;
 
-        $this->setupDispatcher($dispatcher);
-        $this->setupPublisher($publisher);
+        $factory = new HandlerFactory($container);
+
+        $this->setupDispatcher($dispatcher, $factory);
+        $this->setupPublisher($publisher, $factory);
 
         return new Application($this->name, $this->registry->channels(), $kernel);
     }
@@ -309,27 +288,29 @@ final class ApplicationBuilder
     }
 
     /**
-     * @param Dispatcher $dispatcher
+     * @param Dispatcher     $dispatcher
+     * @param HandlerFactory $factory
      *
      * @return void
      */
-    private function setupDispatcher(Dispatcher $dispatcher): void
+    private function setupDispatcher(Dispatcher $dispatcher, HandlerFactory $factory): void
     {
         foreach ($this->registry->handlers() as $command => $handler) {
-            $dispatcher->register($command, $this->factory->make($handler));
+            $dispatcher->register($command, $factory->make($handler));
         }
     }
 
     /**
-     * @param Publisher $publisher
+     * @param Publisher      $publisher
+     * @param HandlerFactory $factory
      *
      * @return void
      */
-    private function setupPublisher(Publisher $publisher): void
+    private function setupPublisher(Publisher $publisher, HandlerFactory $factory): void
     {
         foreach ($this->registry->listeners() as $event => $listeners) {
             foreach ($listeners as $listener) {
-                $publisher->listen($event, $this->factory->make($listener));
+                $publisher->listen($event, $factory->make($listener));
             }
         }
     }

@@ -2,6 +2,7 @@
 
 declare(strict_types = 1);
 
+use Amp\Delayed;
 use Psr\Log\LoggerInterface;
 
 class Hello
@@ -32,7 +33,7 @@ class ConsumerService
     {
         $logger->info("Hello {$hello->name}!");
 
-        yield new \Amp\Delayed(1000); // Emulate long calculating
+        yield new Delayed(3000); // Emulate long calculating
 
         yield new Greeting($hello->name);
     }

@@ -64,6 +64,8 @@ function delay($interval, object $message): Message\Delay
 
 /**
  * @param callable $callback
+ *
+ * @return void
  */
 function defer(callable $callback): void
 {
@@ -73,6 +75,8 @@ function defer(callable $callback): void
 /**
  * @param Iterator $iterator
  * @param callable $callback
+ *
+ * @return void
  */
 function iterate(Iterator $iterator, callable $callback): void
 {

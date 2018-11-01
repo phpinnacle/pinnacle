@@ -12,23 +12,21 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
+use Psr\Container\ContainerInterface;
+
 final class HandlerFactory
 {
     /**
-     * @var Instruction[]
+     * @var ContainerInterface
      */
-    private $instructions = [];
+    private $container;
 
     /**
-     * @param Instruction $instruction
-     *
-     * @return self
+     * @param ContainerInterface $container
      */
-    public function instruction(Instruction $instruction): self
+    public function __construct(ContainerInterface $container)
     {
-        $this->instructions[] = $instruction;
-
-        return $this;
+        $this->container = $container;
     }
 
     /**
@@ -38,10 +36,44 @@ final class HandlerFactory
      */
     public function make(callable $handler): callable
     {
-        foreach ($this->instructions as $instruction) {
-            $handler = $instruction->process($handler);
+        $parameters = $this->getParameters($handler);
+        $resolved = [];
+
+        foreach ($parameters as $i => $parameter) {
+            if (!$class = $parameter->getClass()) {
+                continue;
+            }
+
+            $instance = $this->resolveArgument($class->getName());
+
+            if (\is_object($instance) && $class->isInstance($instance)) {
+                $resolved[$i] = $instance;
+            }
         }
 
-        return $handler;
+        return function (...$arguments) use ($handler, $resolved) {
+            return $handler(...array_replace($arguments, $resolved));
+        };
+    }
+
+    /**
+     * @param callable $handler
+     *
+     * @return \ReflectionParameter[]
+     * @throws \ReflectionException
+     */
+    private function getParameters(callable $handler): array
+    {
+        return (new \ReflectionMethod(\Closure::fromCallable($handler), '__invoke'))->getParameters();
+    }
+
+    /**
+     * @param string $class
+     *
+     * @return mixed
+     */
+    private function resolveArgument(string $class)
+    {
+        return $this->container->has($class) ? $this->container->get($class) : null;
     }
 }
