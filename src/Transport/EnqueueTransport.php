@@ -103,7 +103,7 @@ final class EnqueueTransport implements Transport
     private function consume(PsrDestination $destination): Iterator
     {
         $consumer = $this->context->createConsumer($destination);
-        $emitter  = new Emitter();
+        $emitter  = new Emitter;
 
         Loop::repeat($this->interval, static function () use ($consumer, $emitter): void {
             if (!$message = $consumer->receiveNoWait()) {
@@ -152,6 +152,7 @@ final class EnqueueTransport implements Transport
 
     /**
      * @param string $name
+     *
      * @return string
      */
     private function sanitizeName(string $name): string

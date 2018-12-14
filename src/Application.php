@@ -12,7 +12,10 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
+use Amp\Loop;
 use Amp\Promise;
+use Amp\Success;
+use PHPinnacle\Ensign\Dispatcher;
 
 final class Application
 {
@@ -27,20 +30,20 @@ final class Application
     private $channels;
 
     /**
-     * @var Kernel
+     * @var Dispatcher
      */
     private $kernel;
 
     /**
-     * @param string   $name
-     * @param string[] $channels
-     * @param Kernel   $kernel
+     * @param string     $name
+     * @param string[]   $channels
+     * @param Dispatcher $dispatcher
      */
-    public function __construct(string $name, array $channels, Kernel $kernel)
+    public function __construct(string $name, array $channels, Dispatcher $dispatcher)
     {
         $this->name     = $name;
         $this->channels = $channels;
-        $this->kernel   = $kernel;
+        $this->kernel   = $dispatcher;
     }
 
     /**
@@ -48,10 +51,14 @@ final class Application
      */
     public function start(): Promise
     {
-        return Promise\all([
-            $this->dispatch(new Message\Open($this->name)),
-            $this->dispatch(new Message\Subscribe($this->channels)),
-        ]);
+        Loop::defer(function () {
+            yield Promise\all([
+                $this->dispatch(new Message\Open($this->name)),
+                $this->dispatch(new Message\Subscribe($this->channels)),
+            ]);
+        });
+
+        return new Success;
     }
 
     /**

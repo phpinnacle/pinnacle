@@ -18,8 +18,8 @@ use Amp\Loop;
 /**
  * @param string $destination
  * @param object $message
- * @param array  $headers
  * @param int    $timeout
+ * @param array  $headers
  *
  * @return Message\Send
  */
@@ -60,33 +60,4 @@ function publish(object $message, array $headers = []): Message\Publish
 function delay($interval, object $message): Message\Delay
 {
     return new Message\Delay($interval, $message);
-}
-
-/**
- * @param callable $callback
- *
- * @return void
- */
-function defer(callable $callback): void
-{
-    Loop::unreference(Loop::defer($callback));
-}
-
-/**
- * @param Iterator $iterator
- * @param callable $callback
- *
- * @return void
- */
-function iterate(Iterator $iterator, callable $callback): void
-{
-    defer(function () use ($iterator, $callback) {
-        while (yield $iterator->advance()) {
-            $current = $iterator->getCurrent();
-
-            defer(function () use ($current, $callback) {
-                yield \Amp\call($callback, $current);
-            });
-        }
-    });
 }

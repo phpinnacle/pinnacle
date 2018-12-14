@@ -25,7 +25,10 @@ final class Synchronizer
     private $waiters = [];
 
     /**
-     * {@inheritdoc}
+     * @param string $key
+     * @param int    $timeout
+     *
+     * @return Promise
      */
     public function wait(string $key, int $timeout = null): Promise
     {
@@ -49,7 +52,10 @@ final class Synchronizer
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $key
+     *
+     * @return Promise
+     * @throws Exception\ResolutionException
      */
     public function resolve(string $key): Promise
     {
@@ -63,7 +69,11 @@ final class Synchronizer
     }
 
     /**
-     * {@inheritdoc}
+     * @param string     $key
+     * @param \Throwable $error
+     *
+     * @return Promise
+     * @throws Exception\ResolutionException
      */
     public function reject(string $key, \Throwable $error): Promise
     {

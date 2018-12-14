@@ -16,6 +16,7 @@ final class Time
 {
     /**
      * @return int
+     * @throws \Exception
      */
     public static function seconds(): int
     {
@@ -26,6 +27,7 @@ final class Time
      * @param \DateInterval $interval
      *
      * @return int
+     * @throws \Exception
      */
     public static function milliseconds(\DateInterval $interval = null): int
     {
@@ -38,6 +40,7 @@ final class Time
      * @param string $time
      *
      * @return \DateTimeImmutable
+     * @throws \Exception
      */
     public static function now(string $time = null): \DateTimeImmutable
     {

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "09554bc53a1fcf21a5bc60cc4d0c3adc",
+    "content-hash": "418612e865efda52b31e6c556513e0a7",
     "packages": [
         {
             "name": "amphp/amp",
@@ -1231,26 +1231,26 @@
         },
         {
             "name": "phpinnacle/ensign",
-            "version": "1.0.0",
+            "version": "1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpinnacle/ensign.git",
-                "reference": "c686119a2dcdd5fd211bf101cdc57cc5abf2c34d"
+                "reference": "a36e607be0a27d092c38e8bf14ab474e048aef68"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpinnacle/ensign/zipball/c686119a2dcdd5fd211bf101cdc57cc5abf2c34d",
-                "reference": "c686119a2dcdd5fd211bf101cdc57cc5abf2c34d",
+                "url": "https://api.github.com/repos/phpinnacle/ensign/zipball/a36e607be0a27d092c38e8bf14ab474e048aef68",
+                "reference": "a36e607be0a27d092c38e8bf14ab474e048aef68",
                 "shasum": ""
             },
             "require": {
                 "amphp/amp": "^2.0",
                 "php": "^7.1",
-                "phpinnacle/identity": "^0.1.0"
+                "psr/container": "^1.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "^6.0",
-                "squizlabs/php_codesniffer": "^2.3"
+                "amphp/parallel-functions": "^0.1.3",
+                "phpunit/phpunit": "^6.0"
             },
             "suggest": {
                 "amphp/parallel-functions": "For using ParallelProcessor."
@@ -1264,10 +1264,7 @@
             "autoload": {
                 "psr-4": {
                     "PHPinnacle\\Ensign\\": "src"
-                },
-                "files": [
-                    "src/functions.php"
-                ]
+                }
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
@@ -1288,64 +1285,7 @@
                 "phpinnacle",
                 "signal dispatcher"
             ],
-            "time": "2018-09-06T07:33:26+00:00"
-        },
-        {
-            "name": "phpinnacle/identity",
-            "version": "0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/phpinnacle/identity.git",
-                "reference": "2c535ec25ee6eab76704c6a7b0a9e2e5437af9ad"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/phpinnacle/identity/zipball/2c535ec25ee6eab76704c6a7b0a9e2e5437af9ad",
-                "reference": "2c535ec25ee6eab76704c6a7b0a9e2e5437af9ad",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.0",
-                "ramsey/uuid": "^3.7"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^6.0",
-                "squizlabs/php_codesniffer": "^2.3"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "PHPinnacle\\Identity\\": "src"
-                },
-                "files": [
-                    "src/functions.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "PHPinnacle",
-                    "email": "dev@phpinnacle.com",
-                    "homepage": "https://phpinnacle.com",
-                    "role": "Developer"
-                }
-            ],
-            "description": "PHPinnacle Identity",
-            "homepage": "https://github.com/phpinnacle/identity",
-            "keywords": [
-                "identity",
-                "phpinnacle",
-                "uuid"
-            ],
-            "time": "2018-01-31T06:11:40+00:00"
+            "time": "2018-12-27T07:17:41+00:00"
         },
         {
             "name": "psr/container",
@@ -2318,6 +2258,63 @@
                 }
             ],
             "time": "2017-07-14T14:27:02+00:00"
+        },
+        {
+            "name": "phpinnacle/identity",
+            "version": "0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpinnacle/identity.git",
+                "reference": "2c535ec25ee6eab76704c6a7b0a9e2e5437af9ad"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpinnacle/identity/zipball/2c535ec25ee6eab76704c6a7b0a9e2e5437af9ad",
+                "reference": "2c535ec25ee6eab76704c6a7b0a9e2e5437af9ad",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.0",
+                "ramsey/uuid": "^3.7"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^6.0",
+                "squizlabs/php_codesniffer": "^2.3"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PHPinnacle\\Identity\\": "src"
+                },
+                "files": [
+                    "src/functions.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHPinnacle",
+                    "email": "dev@phpinnacle.com",
+                    "homepage": "https://phpinnacle.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "PHPinnacle Identity",
+            "homepage": "https://github.com/phpinnacle/identity",
+            "keywords": [
+                "identity",
+                "phpinnacle",
+                "uuid"
+            ],
+            "time": "2018-01-31T06:11:40+00:00"
         },
         {
             "name": "phpspec/prophecy",
@@ -3560,7 +3557,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": "^7.1"
+        "php": "^7.2"
     },
     "platform-dev": []
 }

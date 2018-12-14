@@ -46,12 +46,12 @@ final class Gateway
 
     /**
      * @param Message\Open    $command
-     * @param Kernel          $kernel
      * @param LoggerInterface $logger
      *
-     * @return void
+     * @return \Generator
+     * @throws \Throwable
      */
-    public function open(Message\Open $command, Kernel $kernel, LoggerInterface $logger)
+    public function open(Message\Open $command, LoggerInterface $logger)
     {
         $logger->debug('Start consuming messages for "{channel}"', [
             'channel' => $command->channel(),
@@ -59,34 +59,38 @@ final class Gateway
 
         $iterator = $this->transport->open($command->channel());
 
-        iterate($iterator, function (Package $package) use ($kernel) {
+        while (yield $iterator->advance()) {
+            $package = $iterator->getCurrent();
+
             $message = $this->packer->unpack($package);
             $context = Context\RemoteContext::create($package);
 
-            try {
-                yield $kernel->dispatch($message, $context);
+            yield function () use ($message, $context) {
+                try {
+                    yield $message => $context;
 
-                $reply = new Message\Confirm($context->id());
-            } catch (\Throwable $error) {
-                $reply = new Message\Reject($context->id(), $error);
-            }
+                    $reply = new Message\Confirm($context->id());
+                } catch (\Throwable $error) {
+                    $reply = new Message\Reject($context->id(), $error);
+                }
 
-            if ($message instanceof Contract\NoConfirmation) {
-                return;
-            }
+                if ($message instanceof Contract\NoConfirmation) {
+                    return;
+                }
 
-            yield $this->transport->send($context->origin(), $this->packer->pack($reply));
-        });
+                yield $this->transport->send($context->origin(), $this->packer->pack($reply));
+            };
+        }
     }
 
     /**
      * @param Message\Subscribe $command
-     * @param Publisher         $publisher
      * @param LoggerInterface   $logger
      *
-     * @return void
+     * @return \Generator
+     * @throws \Throwable
      */
-    public function subscribe(Message\Subscribe $command, Publisher $publisher, LoggerInterface $logger)
+    public function subscribe(Message\Subscribe $command, LoggerInterface $logger)
     {
         foreach ($command->channels() as $channel) {
             $logger->debug('Subscribed to channel "{channel}"', [
@@ -95,12 +99,16 @@ final class Gateway
 
             $iterator = $this->transport->subscribe($channel);
 
-            iterate($iterator, function (Package $package) use ($publisher) {
-                $message = $this->packer->unpack($package);
-                $context = Context\RemoteContext::create($package);
+            yield function () use ($iterator) {
+                while (yield $iterator->advance()) {
+                    $package = $iterator->getCurrent();
 
-                yield $publisher->publish($message, $context);
-            });
+                    $message = $this->packer->unpack($package);
+                    $context = Context\RemoteContext::create($package);
+
+                    yield $this->dispatch($message, $context);
+                }
+            };
         }
     }
 
@@ -203,5 +211,18 @@ final class Gateway
 
             throw $error;
         }
+    }
+
+    /**
+     * @param object  $message
+     * @param Context $context
+     *
+     * @return callable
+     */
+    private function dispatch(object $message, Context $context): callable
+    {
+        return function () use ($message, $context) {
+            yield $message => $context;
+        };
     }
 }

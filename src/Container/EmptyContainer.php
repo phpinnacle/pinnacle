@@ -17,7 +17,6 @@ use Psr\Container\NotFoundExceptionInterface;
 
 final class EmptyContainer implements ContainerInterface
 {
-
     /**
      * {@inheritdoc}
      */
