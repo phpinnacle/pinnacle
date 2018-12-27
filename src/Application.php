@@ -32,7 +32,7 @@ final class Application
     /**
      * @var Dispatcher
      */
-    private $kernel;
+    private $dispatcher;
 
     /**
      * @param string     $name
@@ -41,9 +41,9 @@ final class Application
      */
     public function __construct(string $name, array $channels, Dispatcher $dispatcher)
     {
-        $this->name     = $name;
-        $this->channels = $channels;
-        $this->kernel   = $dispatcher;
+        $this->name       = $name;
+        $this->channels   = $channels;
+        $this->dispatcher = $dispatcher;
     }
 
     /**
@@ -77,6 +77,6 @@ final class Application
      */
     public function dispatch(object $message, ...$arguments): Promise
     {
-        return $this->kernel->dispatch($message, ...$arguments);
+        return $this->dispatcher->dispatch($message, ...$arguments);
     }
 }

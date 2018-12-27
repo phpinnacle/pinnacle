@@ -18,15 +18,15 @@ use Amp\Iterator;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
-use Interop\Queue\PsrContext;
-use Interop\Queue\PsrDestination;
+use Interop\Queue\Context;
+use Interop\Queue\Destination;
 use PHPinnacle\Pinnacle\Package;
 use PHPinnacle\Pinnacle\Transport;
 
 final class EnqueueTransport implements Transport
 {
     /**
-     * @var PsrContext
+     * @var Context
      */
     private $context;
 
@@ -36,23 +36,13 @@ final class EnqueueTransport implements Transport
     private $interval;
 
     /**
-     * @param PsrContext $context
-     * @param int        $interval
+     * @param Context $context
+     * @param int     $interval
      */
-    public function __construct(PsrContext $context, int $interval = 10)
+    public function __construct(Context $context, int $interval = 10)
     {
         $this->context  = $context;
         $this->interval = $interval;
-    }
-
-    /**
-     * @param string $dsn
-     *
-     * @return self
-     */
-    public static function dsn(string $dsn): self
-    {
-        return new self(\Enqueue\dsn_to_context($dsn));
     }
 
     /**
@@ -60,9 +50,7 @@ final class EnqueueTransport implements Transport
      */
     public function open(string $channel): Iterator
     {
-        $name = $this->sanitizeName($channel);
-
-        return $this->consume($this->context->createQueue($name));
+        return $this->consume($this->context->createQueue($channel));
     }
 
     /**
@@ -70,9 +58,7 @@ final class EnqueueTransport implements Transport
      */
     public function subscribe(string $channel): Iterator
     {
-        $name = $this->sanitizeName($channel);
-
-        return $this->consume($this->context->createTopic($name));
+        return $this->consume($this->context->createTopic($channel));
     }
 
     /**
@@ -80,9 +66,7 @@ final class EnqueueTransport implements Transport
      */
     public function send(string $channel, Package $package): Promise
     {
-        $name = $this->sanitizeName($channel);
-
-        return $this->emit($this->context->createQueue($name), $package);
+        return $this->emit($this->context->createQueue($channel), $package);
     }
 
     /**
@@ -90,17 +74,15 @@ final class EnqueueTransport implements Transport
      */
     public function publish(string $channel, Package $package): Promise
     {
-        $name = $this->sanitizeName($channel);
-
-        return $this->emit($this->context->createTopic($name), $package);
+        return $this->emit($this->context->createTopic($channel), $package);
     }
 
     /**
-     * @param PsrDestination $destination
+     * @param Destination $destination
      *
      * @return Iterator
      */
-    private function consume(PsrDestination $destination): Iterator
+    private function consume(Destination $destination): Iterator
     {
         $consumer = $this->context->createConsumer($destination);
         $emitter  = new Emitter;
@@ -116,26 +98,30 @@ final class EnqueueTransport implements Transport
                 return;
             }
 
-            $consumer->acknowledge($message);
-
-            $emitter->emit(new Package(
+            $promise = $emitter->emit(new Package(
                 $message->getMessageId(),
                 $message->getReplyTo(),
                 $message->getBody(),
                 $message->getHeaders()
             ));
+
+            $promise->onResolve(static function (\Throwable $error = null) use ($consumer, $message) {
+                if ($error === null) {
+                    $consumer->acknowledge($message);
+                }
+            });
         });
 
         return $emitter->iterate();
     }
 
     /**
-     * @param PsrDestination $destination
-     * @param Package        $package
+     * @param Destination $destination
+     * @param Package     $package
      *
      * @return Promise
      */
-    private function emit(PsrDestination $destination, Package $package): Promise
+    private function emit(Destination $destination, Package $package): Promise
     {
         try {
             $message = $this->context->createMessage($package->body(), [], $package->headers());
@@ -148,15 +134,5 @@ final class EnqueueTransport implements Transport
         } catch (\Throwable $error) {
             return new Failure($error);
         }
-    }
-
-    /**
-     * @param string $name
-     *
-     * @return string
-     */
-    private function sanitizeName(string $name): string
-    {
-        return strtolower(str_replace('\\', '_', $name));
     }
 }

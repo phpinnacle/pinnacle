@@ -12,6 +12,11 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
+use Enqueue\ConnectionFactoryFactory;
+use Interop\Amqp\AmqpContext;
+use Interop\Amqp\AmqpQueue;
+use Interop\Amqp\AmqpTopic;
+use Interop\Amqp\Impl\AmqpBind;
 use PHPinnacle\Ensign\DispatcherBuilder;
 use PHPinnacle\Ensign\HandlerFactory;
 use PHPinnacle\Ensign\HandlerWrapper;
@@ -63,9 +68,9 @@ final class ApplicationBuilder
     private $logger;
 
     /**
-     * @var Transport
+     * @var string
      */
-    private $transport;
+    private $dsn;
 
     /**
      * @param string $name
@@ -185,13 +190,13 @@ final class ApplicationBuilder
     }
 
     /**
-     * @param Transport|string $transport
+     * @param string $dsn
      *
      * @return self
      */
-    public function transport($transport): self
+    public function transport(string $dsn): self
     {
-        $this->transport = $transport instanceof Transport ? $transport : Transport\EnqueueTransport::dsn($transport);
+        $this->dsn = $dsn;
 
         return $this;
     }
@@ -213,13 +218,20 @@ final class ApplicationBuilder
      */
     public function build(): Application
     {
-        $container = $this->buildContainer();
+        $this->buildGateway();
+        $this->buildContainer();
 
-        $this
-            ->wrap(new Wrapper\ContainerWrapper($container))
-        ;
+        return new Application($this->name, $this->channels, $this->builder->build());
+    }
 
-        $gateway = $this->createGateway();
+    /**
+     * @return void
+     */
+    private function buildGateway(): void
+    {
+        $transport = (new TransportFactory)->create($this->dsn, $this->name, $this->channels);
+        $packer    = new Packer($this->name, $this->serializer);
+        $gateway   = new Gateway($transport, new Synchronizer, $packer);
 
         $this
             ->handle(Message\Open::class, [$gateway, 'open'])
@@ -230,38 +242,25 @@ final class ApplicationBuilder
             ->handle(Message\Confirm::class, [$gateway, 'confirm'])
             ->handle(Message\Reject::class, [$gateway, 'reject'])
         ;
-
-        $dispatcher = $this->builder->build();
-
-        return new Application($this->name, $this->channels, $dispatcher);
     }
 
     /**
-     * @return Gateway
+     * @return void
      */
-    private function createGateway(): Gateway
-    {
-        $packer = new Packer($this->name, $this->serializer);
-
-        return new Gateway($this->transport, new Synchronizer, $packer);
-    }
-
-    /**
-     * @return ContainerInterface
-     */
-    private function buildContainer(): ContainerInterface
+    private function buildContainer(): void
     {
         $container = new Container\ProxyContainer($this->container);
         $container
             ->add(LoggerInterface::class, $this->logger)
             ->add(Serializer::class, $this->serializer)
-            ->add(Transport::class, $this->transport)
             ->add(Context::class, function () {
                 return Context\LocalContext::create($this->name);
             })
             ->add(Configuration::class, new Configuration($this->options))
         ;
 
-        return $container;
+        $this
+            ->wrap(new Wrapper\ContainerWrapper($container))
+        ;
     }
 }

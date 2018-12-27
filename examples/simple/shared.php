@@ -21,7 +21,7 @@ class Greeting extends Hello
 
 class SenderService
 {
-    public static function replyGreeting(Greeting $greeting, LoggerInterface $logger)
+    public static function replyGreeting(Greeting $greeting, LoggerInterface $logger): void
     {
         $logger->info("Greeting from {$greeting->name}!");
     }

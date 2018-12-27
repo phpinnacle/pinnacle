@@ -61,3 +61,10 @@ function delay($interval, object $message): Message\Delay
 {
     return new Message\Delay($interval, $message);
 }
+
+function async(object $message, ...$arguments): callable
+{
+    return function () use ($message, $arguments) {
+        yield $message => $arguments;
+    };
+}
