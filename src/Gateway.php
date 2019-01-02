@@ -57,15 +57,15 @@ final class Gateway
             'channel' => $command->channel(),
         ]);
 
-        $iterator = $this->transport->open($command->channel());
+        $channel = $this->transport->open($command->channel());
 
-        while (yield $iterator->advance()) {
-            $package = $iterator->getCurrent();
+        while (yield $channel->advance()) {
+            $package = $channel->getCurrent();
 
             $message = $this->packer->unpack($package);
             $context = Context\RemoteContext::create($package);
 
-            yield function () use ($message, $context) {
+            yield function () use ($message, $context, $channel) {
                 try {
                     yield $message => $context;
 
@@ -106,7 +106,7 @@ final class Gateway
                     $message = $this->packer->unpack($package);
                     $context = Context\RemoteContext::create($package);
 
-                    yield $this->dispatch($message, $context);
+                    yield async($message, $context);
                 }
             };
         }
@@ -211,18 +211,5 @@ final class Gateway
 
             throw $error;
         }
-    }
-
-    /**
-     * @param object  $message
-     * @param Context $context
-     *
-     * @return callable
-     */
-    private function dispatch(object $message, Context $context): callable
-    {
-        return function () use ($message, $context) {
-            yield $message => $context;
-        };
     }
 }

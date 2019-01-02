@@ -46,15 +46,12 @@ final class TransportFactory
     public function create(string $dsn, string $name, array $topics = []): Transport
     {
         $context  = $this->createContext($dsn);
-        $interval = 10;
 
         if ($context instanceof AmqpContext) {
             $this->declareContext($context, $name, $topics);
-
-            $interval = 5;
         }
 
-        return new EnqueueTransport(new EnqueueContext($context, $this->normalizer), $interval);
+        return new EnqueueTransport(new EnqueueContext($context, $this->normalizer));
     }
 
     /**

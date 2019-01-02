@@ -18,8 +18,8 @@
     "minimum-stability": "stable",
     "require": {
         "php": "^7.2",
-        "ext-json": "^1.6",
-        "ext-mbstring": "^7.2",
+        "ext-json": "*",
+        "ext-mbstring": "*",
         "amphp/log": "dev-master",
         "enqueue/amqp-lib": "^0.9",
         "enqueue/enqueue": "^0.9",

@@ -12,16 +12,12 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
-use Enqueue\ConnectionFactoryFactory;
-use Interop\Amqp\AmqpContext;
-use Interop\Amqp\AmqpQueue;
-use Interop\Amqp\AmqpTopic;
-use Interop\Amqp\Impl\AmqpBind;
 use PHPinnacle\Ensign\DispatcherBuilder;
 use PHPinnacle\Ensign\HandlerFactory;
 use PHPinnacle\Ensign\HandlerWrapper;
 use PHPinnacle\Ensign\Wrapper;
 use PHPinnacle\Pinnacle\Container;
+use PHPinnacle\Pinnacle\Context\RemoteContext;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -145,7 +141,11 @@ final class ApplicationBuilder
     public function produces(string ...$events): self
     {
         foreach ($events as $event) {
-            $this->handle($event, function (object $message) {
+            $this->handle($event, function (object $message, $context = null) {
+                if ($context && $context instanceof RemoteContext) {
+                    return;
+                }
+
                 yield publish($message);
             });
         }

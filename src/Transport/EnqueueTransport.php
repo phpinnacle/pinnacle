@@ -18,8 +18,10 @@ use Amp\Iterator;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
+use Interop\Queue\Consumer;
 use Interop\Queue\Context;
 use Interop\Queue\Destination;
+use PHPinnacle\Pinnacle\Channel;
 use PHPinnacle\Pinnacle\Package;
 use PHPinnacle\Pinnacle\Transport;
 
@@ -84,35 +86,15 @@ final class EnqueueTransport implements Transport
      */
     private function consume(Destination $destination): Iterator
     {
-        $consumer = $this->context->createConsumer($destination);
-        $emitter  = new Emitter;
+        $consumer  = $this->context->createConsumer($destination);
+        $receiver  = new Emitter;
+        $finalizer = new Emitter;
 
-        Loop::repeat($this->interval, static function () use ($consumer, $emitter): void {
-            if (!$message = $consumer->receiveNoWait()) {
-                return;
-            }
-
-            if (null === $message->getReplyTo()) {
-                $consumer->reject($message);
-
-                return;
-            }
-
-            $promise = $emitter->emit(new Package(
-                $message->getMessageId(),
-                $message->getReplyTo(),
-                $message->getBody(),
-                $message->getHeaders()
-            ));
-
-            $promise->onResolve(static function (\Throwable $error = null) use ($consumer, $message) {
-                if ($error === null) {
-                    $consumer->acknowledge($message);
-                }
-            });
+        Loop::defer(function () use ($consumer, $receiver) {
+            $this->process($consumer, $receiver);
         });
 
-        return $emitter->iterate();
+        return new Channel($receiver->iterate(), $finalizer);
     }
 
     /**
@@ -134,5 +116,33 @@ final class EnqueueTransport implements Transport
         } catch (\Throwable $error) {
             return new Failure($error);
         }
+    }
+
+    /**
+     * @param Consumer $consumer
+     * @param Emitter  $receiver
+     */
+    private function process(Consumer $consumer, Emitter $receiver): void
+    {
+        Loop::defer(function () use ($consumer, $receiver) {
+            $this->process($consumer, $receiver);
+        });
+
+        if (!$message = $consumer->receiveNoWait()) {
+            return;
+        }
+
+        if (null === $message->getReplyTo()) {
+            $consumer->reject($message);
+
+            return;
+        }
+
+        $receiver->emit(new Package(
+            $message->getMessageId(),
+            $message->getReplyTo(),
+            $message->getBody(),
+            $message->getHeaders()
+        ));
     }
 }

@@ -12,9 +12,6 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
-use Amp\Iterator;
-use Amp\Loop;
-
 /**
  * @param string $destination
  * @param object $message
@@ -62,6 +59,12 @@ function delay($interval, object $message): Message\Delay
     return new Message\Delay($interval, $message);
 }
 
+/**
+ * @param object   $message
+ * @param mixed... $arguments
+ *
+ * @return callable
+ */
 function async(object $message, ...$arguments): callable
 {
     return function () use ($message, $arguments) {
