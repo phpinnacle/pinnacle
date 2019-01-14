@@ -92,12 +92,13 @@ final class Gateway
      */
     public function subscribe(Message\Subscribe $command, LoggerInterface $logger)
     {
-        foreach ($command->channels() as $channel) {
+        foreach ($command->channels() as $topic) {
             $logger->debug('Subscribed to channel "{channel}"', [
-                'channel' => $channel,
+                'channel' => $topic,
             ]);
 
-            $channel = yield $this->transport->subscribe($channel);
+            /** @var Channel $channel */
+            $channel = yield $this->transport->open($topic);
 
             yield function () use ($channel) {
                 while (yield $channel->advance()) {
@@ -155,7 +156,7 @@ final class Gateway
     {
         $package = $this->packer->pack($command->message(), $command->headers());
 
-        yield $this->transport->publish($command->channel(), $package);
+        yield $this->transport->send($command->channel(), $package);
 
         $logger->debug('Message "{id}" published to "{channel}".', [
             'id'      => $package->id(),

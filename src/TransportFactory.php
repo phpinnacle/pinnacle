@@ -18,8 +18,7 @@ use Interop\Amqp\AmqpQueue;
 use Interop\Amqp\AmqpTopic;
 use Interop\Amqp\Impl\AmqpBind;
 use Interop\Queue\Context;
-use PHPinnacle\Pinnacle\Transport\EnqueueContext;
-use PHPinnacle\Pinnacle\Transport\EnqueueTransport;
+use PHPinnacle\Ridge\Client;
 
 final class TransportFactory
 {
@@ -45,33 +44,29 @@ final class TransportFactory
      */
     public function create(string $dsn, string $name, array $topics = []): Transport
     {
-        $context  = $this->createContext($dsn);
+        $scheme = parse_url($dsn, PHP_URL_SCHEME);
 
-        if ($context instanceof AmqpContext) {
-            $this->declareContext($context, $name, $topics);
+        switch ($scheme) {
+            case 'mem':
+            case 'memory':
+                return new Transport\InMemoryTransport;
+            case 'redis':
+                return new Transport\RedisTransport($dsn);
+            case 'amqp':
+                $client = Client::create($dsn);
+
+                return new Transport\RidgeTransport($client);
+            default:
+                throw new \InvalidArgumentException;
         }
-
-        return new EnqueueTransport(new EnqueueContext($context, $this->normalizer));
     }
 
     /**
-     * @param string $dsn
-     *
-     * @return Context
+     * @param Client $client
+     * @param string $name
+     * @param array  $topics
      */
-    private function createContext(string $dsn): Context
-    {
-        $factory = (new ConnectionFactoryFactory)->create($dsn);
-
-        return $factory->createContext();
-    }
-
-    /**
-     * @param AmqpContext $context
-     * @param string      $name
-     * @param array       $topics
-     */
-    private function declareContext(AmqpContext $context, string $name, array $topics): void
+    private function setup(Client $client, string $name, array $topics): void
     {
         $name   = $this->normalizer->normalize($name);
         $topics = array_map(function (string $topic) {

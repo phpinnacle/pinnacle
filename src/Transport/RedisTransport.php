@@ -74,23 +74,7 @@ final class RedisTransport implements Transport
     /**
      * {@inheritdoc}
      */
-    public function subscribe(string $channel): Promise
-    {
-        return $this->open($channel);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function send(string $channel, Package $package): Promise
-    {
-        return $this->client->publish($channel, \serialize($package));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function publish(string $channel, Package $package): Promise
     {
         return $this->client->publish($channel, \serialize($package));
     }

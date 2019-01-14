@@ -21,10 +21,9 @@
         "ext-json": "*",
         "ext-mbstring": "*",
         "amphp/log": "dev-master",
-        "enqueue/amqp-lib": "^0.9",
-        "enqueue/enqueue": "^0.9",
         "phpinnacle/ensign": "^1.0",
         "phpinnacle/identity": "^0.1",
+        "phpinnacle/ridge": "dev-performance",
         "psr/container": "^1.0",
         "psr/log": "^1.0",
         "symfony/dotenv": "^4.0"
@@ -32,7 +31,6 @@
     "require-dev": {
         "amphp/file": "^0.3.3",
         "amphp/redis": "^0.3.3",
-        "enqueue/fs": "^0.9.0",
         "nikic/php-parser": "^4.0",
         "phpunit/phpunit": "^6.0",
         "squizlabs/php_codesniffer": "^2.3"

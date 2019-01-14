@@ -43,27 +43,11 @@ final class InMemoryTransport implements Transport
     /**
      * {@inheritdoc}
      */
-    public function subscribe(string $channel): Promise
-    {
-        return $this->open($channel);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function send(string $channel, Package $package): Promise
     {
         $emitter = $this->emitter($channel);
 
         return $emitter->emit($package);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function publish(string $channel, Package $package): Promise
-    {
-        return $this->send($channel, $package);
     }
 
     /**

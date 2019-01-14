@@ -24,25 +24,10 @@ interface Transport
     public function open(string $channel): Promise;
 
     /**
-     * @param string $channel
-     *
-     * @return Promise<Channel>
-     */
-    public function subscribe(string $channel): Promise;
-
-    /**
      * @param string  $channel
      * @param Package $package
      *
      * @return Promise<bool>
      */
     public function send(string $channel, Package $package): Promise;
-
-    /**
-     * @param string  $channel
-     * @param Package $package
-     *
-     * @return Promise<bool>
-     */
-    public function publish(string $channel, Package $package): Promise;
 }
