@@ -14,13 +14,15 @@ namespace PHPinnacle\Pinnacle\Transport;
 
 use Amp\Emitter;
 use Amp\Failure;
-use Amp\Iterator;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
 use Interop\Queue\Consumer;
 use Interop\Queue\Context;
 use Interop\Queue\Destination;
+use Interop\Queue\Exception\SubscriptionConsumerNotSupportedException;
+use Interop\Queue\Message;
+use Interop\Queue\Topic;
 use PHPinnacle\Pinnacle\Channel;
 use PHPinnacle\Pinnacle\Package;
 use PHPinnacle\Pinnacle\Transport;
@@ -50,7 +52,7 @@ final class EnqueueTransport implements Transport
     /**
      * {@inheritdoc}
      */
-    public function open(string $channel): Iterator
+    public function open(string $channel): Channel
     {
         return $this->consume($this->context->createQueue($channel));
     }
@@ -58,7 +60,7 @@ final class EnqueueTransport implements Transport
     /**
      * {@inheritdoc}
      */
-    public function subscribe(string $channel): Iterator
+    public function subscribe(string $channel): Channel
     {
         return $this->consume($this->context->createTopic($channel));
     }
@@ -82,19 +84,37 @@ final class EnqueueTransport implements Transport
     /**
      * @param Destination $destination
      *
-     * @return Iterator
+     * @return Channel
      */
-    private function consume(Destination $destination): Iterator
+    private function consume(Destination $destination): Channel
     {
-        $consumer  = $this->context->createConsumer($destination);
-        $receiver  = new Emitter;
-        $finalizer = new Emitter;
+        $consumer = $this->context->createConsumer($destination);
+        $receiver = new Emitter;
+        $defer    = true;
 
-        Loop::defer(function () use ($consumer, $receiver) {
+        if ($destination instanceof Topic) {
+            try {
+                $subscription = $this->context->createSubscriptionConsumer();
+                $subscription->subscribe($consumer, function (Message $message, Consumer $consumer) use ($receiver) {
+                    $this->doProcess($message, $consumer, $receiver);
+                });
+
+                $defer = false;
+            } catch (SubscriptionConsumerNotSupportedException $error) {
+            }
+        }
+
+        $callback = function () use ($consumer, $receiver, &$callback) {
+            Loop::defer($callback);
+
             $this->process($consumer, $receiver);
-        });
+        };
 
-        return new Channel($receiver->iterate(), $finalizer);
+        if ($defer) {
+            Loop::defer($callback);
+        }
+
+        return new Channel($receiver->iterate());
     }
 
     /**
@@ -121,17 +141,27 @@ final class EnqueueTransport implements Transport
     /**
      * @param Consumer $consumer
      * @param Emitter  $receiver
+     *
+     * @return void
      */
     private function process(Consumer $consumer, Emitter $receiver): void
     {
-        Loop::defer(function () use ($consumer, $receiver) {
-            $this->process($consumer, $receiver);
-        });
-
         if (!$message = $consumer->receiveNoWait()) {
             return;
         }
 
+        $this->doProcess($message, $consumer, $receiver);
+    }
+
+    /**
+     * @param Message  $message
+     * @param Consumer $consumer
+     * @param Emitter  $receiver
+     *
+     * @return void
+     */
+    private function doProcess(Message $message, Consumer $consumer, Emitter $receiver): void
+    {
         if (null === $message->getReplyTo()) {
             $consumer->reject($message);
 
@@ -144,5 +174,7 @@ final class EnqueueTransport implements Transport
             $message->getBody(),
             $message->getHeaders()
         ));
+
+        $consumer->acknowledge($message);
     }
 }

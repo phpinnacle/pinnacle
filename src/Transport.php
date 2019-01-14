@@ -12,7 +12,6 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
-use Amp\Iterator;
 use Amp\Promise;
 
 interface Transport
@@ -20,16 +19,16 @@ interface Transport
     /**
      * @param string $channel
      *
-     * @return Iterator<Package>
+     * @return Promise<Channel>
      */
-    public function open(string $channel): Iterator;
+    public function open(string $channel): Promise;
 
     /**
      * @param string $channel
      *
-     * @return Iterator<Package>
+     * @return Promise<Channel>
      */
-    public function subscribe(string $channel): Iterator;
+    public function subscribe(string $channel): Promise;
 
     /**
      * @param string  $channel

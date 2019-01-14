@@ -12,45 +12,39 @@ declare(strict_types = 1);
 
 namespace PHPinnacle\Pinnacle;
 
-use Amp\Emitter;
 use Amp\Iterator;
 use Amp\Promise;
 
-final class Channel implements Iterator
+final class Channel
 {
     /**
      * @var Iterator
      */
-    private $consumer;
+    private $receiver;
 
     /**
-     * @var Emitter
+     * @param Iterator $receiver
      */
-    private $finalizer;
-
-    /**
-     * @param Iterator $consumer
-     * @param Emitter  $finalizer
-     */
-    public function __construct(Iterator $consumer, Emitter $finalizer)
+    public function __construct(Iterator $receiver)
     {
-        $this->consumer  = $consumer;
-        $this->finalizer = $finalizer;
+        $this->receiver = $receiver;
     }
 
     /**
-     * {@inheritdoc}
+     * @return Promise
+     * @throws \Throwable
      */
     public function advance(): Promise
     {
-        return $this->consumer->advance();
+        return $this->receiver->advance();
     }
 
     /**
-     * {@inheritdoc}
+     * @return Package
+     * @throws \Throwable
      */
-    public function getCurrent()
+    public function receive(): Package
     {
-        return $this->consumer->getCurrent();
+        return $this->receiver->getCurrent();
     }
 }

@@ -11,6 +11,7 @@ require __DIR__ . '/shared.php';
 $name = $argv[1] ?? 'John';
 
 $app = (new Pinnacle\ApplicationBuilder(sprintf('sender:%s', md5($name))))
+    //->transport('amqp://admin:admin123@172.18.0.2')
     ->transport('file:///tmp')
     ->route(Hello::class, 'consumer')
     ->listen(Greeting::class, [SenderService::class, 'replyGreeting'])

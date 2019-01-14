@@ -57,10 +57,10 @@ final class Gateway
             'channel' => $command->channel(),
         ]);
 
-        $channel = $this->transport->open($command->channel());
+        $channel = yield $this->transport->open($command->channel());
 
         while (yield $channel->advance()) {
-            $package = $channel->getCurrent();
+            $package = $channel->receive();
 
             $message = $this->packer->unpack($package);
             $context = Context\RemoteContext::create($package);
@@ -97,11 +97,11 @@ final class Gateway
                 'channel' => $channel,
             ]);
 
-            $iterator = $this->transport->subscribe($channel);
+            $channel = yield $this->transport->subscribe($channel);
 
-            yield function () use ($iterator) {
-                while (yield $iterator->advance()) {
-                    $package = $iterator->getCurrent();
+            yield function () use ($channel) {
+                while (yield $channel->advance()) {
+                    $package = $channel->receive();
 
                     $message = $this->packer->unpack($package);
                     $context = Context\RemoteContext::create($package);
